@@ -7,6 +7,7 @@ import (
 	"os"
 
 	"github.com/joho/godotenv"
+	"golang.org/x/oauth2"
 	"google.golang.org/api/option"
 	"google.golang.org/api/youtube/v3"
 )
@@ -22,7 +23,11 @@ func main() {
 
 	ctx := context.Background()
 
-	client, errConnection := youtube.NewService(ctx, option.WithAPIKey(youtubeAPIKey))
+	tokenSource := oauth2.StaticTokenSource(&oauth2.Token{AccessToken: youtubeAPIKey})
+
+	httpClient := oauth2.NewClient(ctx, tokenSource)
+
+	client, errConnection := youtube.NewService(ctx, option.WithHTTPClient(httpClient))
 
 	if errConnection != nil {
 		log.Fatalf("Error establishing youtube client %v", errConnection)
