@@ -12,8 +12,8 @@ import (
 )
 
 type Video struct {
-	Title     string
-	LengthMin int
+	Title string
+	EndAt string
 }
 
 func GetPrimagenId(client *youtube.Service) (string, error) {
@@ -126,14 +126,10 @@ func GetRecentVideos(client *youtube.Service, playlistId string) (map[string]Vid
 		}
 
 		if publishedAt.After(oneDayAgo) {
-
-			toMinutes, errCovertMins := iso8601ToMinutes(item.ContentDetails.EndAt)
-
-			if errCovertMins != nil {
-				log.Fatalf("Cannot covert video length string to minutes: %v", errCovertMins)
+			videoList[item.Snippet.ResourceId.VideoId] = Video{
+				item.Snippet.Title,
+				item.ContentDetails.EndAt,
 			}
-
-			videoList[item.Snippet.ResourceId.VideoId] = Video{item.Snippet.Title, toMinutes}
 		}
 
 	}
