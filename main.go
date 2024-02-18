@@ -23,7 +23,7 @@ func main() {
 	}
 }
 
-func getVideos() (map[string]vids.Video, error) {
+func getVideos() (map[string]vids.VideoInfo, error) {
 	establishClient, errClient := auth.GetYoutubeService()
 
 	if errClient != nil {

@@ -11,7 +11,7 @@ import (
 	"google.golang.org/api/youtube/v3"
 )
 
-type Video struct {
+type VideoInfo struct {
 	Title      string
 	LengthMins int
 }
@@ -104,7 +104,7 @@ func iso8601ToMinutes(duration string) (int, error) {
 	return totalMininutes, nil
 }
 
-func GetRecentVideos(client *youtube.Service, playlistId string) (map[string]Video, error) {
+func GetRecentVideos(client *youtube.Service, playlistId string) (map[string]VideoInfo, error) {
 	callPlaylists := client.PlaylistItems.List([]string{"snippet"}).
 		PlaylistId(playlistId).
 		MaxResults(15)
@@ -138,13 +138,14 @@ func GetRecentVideos(client *youtube.Service, playlistId string) (map[string]Vid
 	videoCall := client.Videos.List([]string{"contentDetails"}).Id(videoIds...)
 
 	videoResp, errGetVideo := videoCall.Do()
-	videoList := make(map[string]Video)
+	videoList := make(map[string]VideoInfo)
 
 	if errGetVideo != nil {
 		return videoList, fmt.Errorf("Error get content details in video: %v", errGetVideo)
 	}
 
 	for _, video := range videoResp.Items {
+		fmt.Printf("video struct in each call: %v\n", video)
 		toMinutes, errConvertMinutes := iso8601ToMinutes(video.ContentDetails.Duration)
 
 		if errConvertMinutes != nil {
@@ -154,7 +155,7 @@ func GetRecentVideos(client *youtube.Service, playlistId string) (map[string]Vid
 			)
 		}
 
-		videoList[video.Id] = Video{video.Snippet.Title, toMinutes}
+		videoList[video.Id] = VideoInfo{video.Snippet.Title, toMinutes}
 		fmt.Printf(
 			"Found video id: %v, title: %v, duration: %d minutes\n",
 			video.Id,
