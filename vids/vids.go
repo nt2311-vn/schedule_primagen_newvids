@@ -138,12 +138,11 @@ func GetRecentVideos(client *youtube.Service, playlistId string) (map[string]Vid
 	videoCall := client.Videos.List([]string{"contentDetails"}).Id(videoIds...)
 
 	videoResp, errGetVideo := videoCall.Do()
+	videoList := make(map[string]Video)
 
 	if errGetVideo != nil {
-		return nil, fmt.Errorf("Error get content details in video: %v", errGetVideo)
+		return videoList, fmt.Errorf("Error get content details in video: %v", errGetVideo)
 	}
-
-	videoList := make(map[string]Video)
 
 	for _, video := range videoResp.Items {
 		toMinutes, errConvertMinutes := iso8601ToMinutes(video.ContentDetails.Duration)
@@ -156,6 +155,12 @@ func GetRecentVideos(client *youtube.Service, playlistId string) (map[string]Vid
 		}
 
 		videoList[video.Id] = Video{video.Snippet.Title, toMinutes}
+		fmt.Printf(
+			"Found video id: %v, title: %v, duration: %d minutes\n",
+			video.Id,
+			video.Snippet.Title,
+			toMinutes,
+		)
 	}
 
 	return videoList, nil
