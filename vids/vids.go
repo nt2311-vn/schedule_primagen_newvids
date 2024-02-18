@@ -12,8 +12,8 @@ import (
 )
 
 type Video struct {
-	Title string
-	EndAt string
+	Title      string
+	LengthMins int
 }
 
 func GetPrimagenId(client *youtube.Service) (string, error) {
@@ -105,16 +105,16 @@ func iso8601ToMinutes(duration string) (int, error) {
 }
 
 func GetRecentVideos(client *youtube.Service, playlistId string) (map[string]Video, error) {
-	callVideos := client.PlaylistItems.List([]string{"snippet"}).
+	callPlaylists := client.PlaylistItems.List([]string{"snippet"}).
 		PlaylistId(playlistId).
 		MaxResults(15)
 
-	resp, err := callVideos.Do()
+	resp, err := callPlaylists.Do()
 	if err != nil {
 		return nil, err
 	}
 
-	videoList := map[string]Video{}
+	videoIds := []string{}
 	now := time.Now()
 	oneDayAgo := now.AddDate(0, 0, -1)
 
@@ -126,12 +126,37 @@ func GetRecentVideos(client *youtube.Service, playlistId string) (map[string]Vid
 		}
 
 		if publishedAt.After(oneDayAgo) {
-			videoList[item.Snippet.ResourceId.VideoId] = Video{
-				item.Snippet.Title,
-				item.ContentDetails.EndAt,
-			}
+			videoIds = append(videoIds, item.Snippet.ResourceId.VideoId)
 		}
 
 	}
+
+	if len(videoIds) == 0 {
+		return nil, fmt.Errorf("There is no video to schedule")
+	}
+
+	videoCall := client.Videos.List([]string{"contentDetails"}).Id(videoIds...)
+
+	videoResp, errGetVideo := videoCall.Do()
+
+	if errGetVideo != nil {
+		return nil, fmt.Errorf("Error get content details in video: %v", errGetVideo)
+	}
+
+	videoList := make(map[string]Video)
+
+	for _, video := range videoResp.Items {
+		toMinutes, errConvertMinutes := iso8601ToMinutes(video.ContentDetails.Duration)
+
+		if errConvertMinutes != nil {
+			return nil, fmt.Errorf(
+				"Error at convert length iso format to minutes: %v",
+				errConvertMinutes,
+			)
+		}
+
+		videoList[video.Id] = Video{video.Snippet.Title, toMinutes}
+	}
+
 	return videoList, nil
 }
