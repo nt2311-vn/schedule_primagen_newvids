@@ -19,6 +19,8 @@ func main() {
 	call := clientService.Subscriptions.List([]string{"snippet"}).Mine(true).MaxResults(maxChannels)
 	nextPageToken := ""
 
+	primagenTitles := map[string]bool{"ThePrimeTime": true}
+
 	for {
 		if nextPageToken != "" {
 			call.PageToken(nextPageToken)
@@ -30,7 +32,10 @@ func main() {
 		}
 
 		for _, item := range resp.Items {
-			fmt.Printf("%s : %s\n", item.Snippet.ResourceId.ChannelId, item.Snippet.Title)
+			if _, channelExist := primagenTitles[item.Snippet.Title]; channelExist {
+				fmt.Printf("Found the Primagen channel id: %s\n", item.Snippet.ResourceId.ChannelId)
+				return
+			}
 		}
 
 		nextPageToken = resp.NextPageToken
