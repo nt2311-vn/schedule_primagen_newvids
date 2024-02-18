@@ -18,7 +18,7 @@ func main() {
 
 	if len(mapVids) > 0 {
 		for _, value := range mapVids {
-			fmt.Printf("Title: %v, video info: %d\n", value.Title, value.LengthMins)
+			fmt.Printf("Title: %v, video info: %d minutes\n", value.Title, value.LengthMins)
 		}
 	}
 }

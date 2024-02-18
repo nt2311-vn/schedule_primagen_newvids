@@ -119,37 +119,30 @@ func GetRecentVideos(client *youtube.Service, playlistId string) (map[string]*Vi
 	videoList := make(map[string]*VideoInfo)
 
 	for _, item := range resp.Items {
-		if item.Snippet == nil || item.Snippet.ResourceId == nil {
-			log.Println("Skipping item due to nil snipper or resource id")
-			continue
-		}
 		publishedAt, err := time.Parse(time.RFC3339, item.Snippet.PublishedAt)
 		if err != nil {
 			log.Printf("Error parsing time: %v\n", err)
 			continue
 		}
 
-		if publishedAt.After(oneDayAgo) {
-			if item.Snippet.ResourceId.VideoId == "" {
-				fmt.Println("Skipping due to no video Id")
-				continue
-			}
-			videoList[item.Snippet.ResourceId.VideoId] = &VideoInfo{item.Snippet.Title, 0}
+		if publishedAt.Before(oneDayAgo) {
+			continue
 		}
+		videoList[item.Snippet.ResourceId.VideoId] = &VideoInfo{item.Snippet.Title, 0}
 
 		vidResp, errGetVideo := client.Videos.List([]string{"contentDetails"}).
 			Id(item.Snippet.ResourceId.VideoId).
 			Do()
 
 		if errGetVideo != nil {
-			return nil, fmt.Errorf("Error get content details in video: %v", errGetVideo)
+			return videoList, fmt.Errorf("Error get content details in video: %v", errGetVideo)
 		}
 
 		for _, video := range vidResp.Items {
 			toMinutes, errConvertMinutes := iso8601ToMinutes(video.ContentDetails.Duration)
 
 			if errConvertMinutes != nil {
-				return nil, fmt.Errorf(
+				return videoList, fmt.Errorf(
 					"Error at convert length iso format to minutes: %v",
 					errConvertMinutes,
 				)
@@ -157,14 +150,7 @@ func GetRecentVideos(client *youtube.Service, playlistId string) (map[string]*Vi
 
 			videoInfo := videoList[item.Snippet.ResourceId.VideoId]
 
-			if videoInfo.Title == "" {
-				log.Println("Skip video with no title")
-				continue
-			}
-
-			if videoInfo != nil {
-				videoInfo.LengthMins = toMinutes
-			}
+			videoInfo.LengthMins = toMinutes
 
 			fmt.Printf(
 				"Found video title: %v, duration: %d minutes\n",
@@ -173,9 +159,6 @@ func GetRecentVideos(client *youtube.Service, playlistId string) (map[string]*Vi
 			)
 		}
 	}
-	fmt.Println("Exit loop")
-
-	fmt.Printf("Video list info before export: %v\n", &videoList)
 
 	return videoList, nil
 }
