@@ -10,6 +10,7 @@ import (
 
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/google"
+	"google.golang.org/api/calendar/v3"
 	"google.golang.org/api/option"
 	"google.golang.org/api/youtube/v3"
 )
@@ -73,7 +74,7 @@ func getClient(config *oauth2.Config) *http.Client {
 	return config.Client(context.Background(), tok)
 }
 
-func GetAuth() (*youtube.Service, error) {
+func GetYoutubeService() (*youtube.Service, error) {
 	ctx := context.Background()
 
 	jsonCred, errReadCredentials := os.ReadFile("credentials.json")
@@ -89,11 +90,36 @@ func GetAuth() (*youtube.Service, error) {
 
 	client := getClient(config)
 
-	service, errCreateService := youtube.NewService(ctx, option.WithHTTPClient(client))
+	youtubeClient, errYoutubeService := youtube.NewService(ctx, option.WithHTTPClient(client))
 
-	if errCreateService != nil {
-		return nil, errCreateService
+	if errYoutubeService != nil {
+		return nil, errYoutubeService
 	}
 
-	return service, nil
+	return youtubeClient, nil
+}
+
+func GetCalendarService() (*calendar.Service, error) {
+	ctx := context.Background()
+
+	jsonCred, errReadCredentials := os.ReadFile("credentials.json")
+
+	if errReadCredentials != nil {
+		return nil, errReadCredentials
+	}
+
+	config, err := google.ConfigFromJSON(jsonCred, youtube.YoutubeReadonlyScope)
+	if err != nil {
+		return nil, err
+	}
+
+	client := getClient(config)
+
+	calendarClient, errCalendarService := calendar.NewService(ctx, option.WithHTTPClient(client))
+
+	if errCalendarService != nil {
+		return nil, errCalendarService
+	}
+
+	return calendarClient, nil
 }
