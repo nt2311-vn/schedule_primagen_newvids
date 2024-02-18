@@ -1,49 +1,27 @@
 package main
 
 import (
-	"context"
 	"fmt"
 	"log"
-	"os"
 
-	"github.com/joho/godotenv"
-	"golang.org/x/oauth2"
-	"google.golang.org/api/option"
-	"google.golang.org/api/youtube/v3"
+	"github.com/nt2311-vn/schedule_primagen_newvids/auth"
 )
 
 func main() {
-	errLoadEnv := godotenv.Load()
-	if errLoadEnv != nil {
-		log.Fatal(errLoadEnv)
+	clientService, errGetService := auth.GetAuth()
+
+	if errGetService != nil {
+		log.Fatalf("Error at getting service from api youtube: %v", errGetService)
 	}
 
-	fmt.Println("Load environment varialbe comple")
-	youtubeAPIKey := os.Getenv("YOUTUBE_API_KEY")
+	call := clientService.Subscriptions.List([]string{"snippet"}).Mine(true)
 
-	ctx := context.Background()
-
-	tokenSource := oauth2.StaticTokenSource(&oauth2.Token{AccessToken: youtubeAPIKey})
-
-	httpClient := oauth2.NewClient(ctx, tokenSource)
-
-	client, errConnection := youtube.NewService(ctx, option.WithHTTPClient(httpClient))
-
-	if errConnection != nil {
-		log.Fatalf("Error establishing youtube client %v", errConnection)
+	resp, err := call.Do()
+	if err != nil {
+		log.Fatalf("Error fetching Subscriptions: %v", err)
 	}
 
-	call := client.Subscriptions.List([]string{"snippet"}).Mine(true)
-
-	subscribeList, errGetList := call.Do()
-
-	if errGetList != nil {
-		log.Fatalf("Error get subscription list %v", errGetList)
-	}
-
-	fmt.Println("List of subscription channel")
-
-	for _, item := range subscribeList.Items {
-		fmt.Printf("ID: %s, Title: %s\n", item.Snippet.ResourceId.ChannelId, item.Snippet.Title)
+	for _, item := range resp.Items {
+		fmt.Printf("%s : %s\n", item.Snippet.ResourceId.ChannelId, item.Snippet.Title)
 	}
 }
