@@ -114,9 +114,9 @@ func GetRecentVideos(client *youtube.Service, playlistId string) (map[string]Vid
 		return nil, err
 	}
 
-	videoIds := []string{}
 	now := time.Now()
 	oneDayAgo := now.AddDate(0, 0, -1)
+	videoList := make(map[string]VideoInfo)
 
 	for _, item := range resp.Items {
 		publishedAt, err := time.Parse(time.RFC3339, item.Snippet.PublishedAt)
@@ -126,42 +126,37 @@ func GetRecentVideos(client *youtube.Service, playlistId string) (map[string]Vid
 		}
 
 		if publishedAt.After(oneDayAgo) {
-			videoIds = append(videoIds, item.Snippet.ResourceId.VideoId)
+			videoList[item.Snippet.ResourceId.VideoId] = VideoInfo{item.Snippet.Title, 0}
 		}
 
-	}
+		vidResp, errGetVideo := client.Videos.List([]string{"contentDetails"}).
+			Id(item.Snippet.ResourceId.VideoId).
+			Do()
 
-	if len(videoIds) == 0 {
-		return nil, fmt.Errorf("There is no video to schedule")
-	}
+		if errGetVideo != nil {
+			return videoList, fmt.Errorf("Error get content details in video: %v", errGetVideo)
+		}
 
-	videoCall := client.Videos.List([]string{"contentDetails"}).Id(videoIds...)
+		for _, video := range vidResp.Items {
+			toMinutes, errConvertMinutes := iso8601ToMinutes(video.ContentDetails.Duration)
 
-	videoResp, errGetVideo := videoCall.Do()
-	videoList := make(map[string]VideoInfo)
+			if errConvertMinutes != nil {
+				return nil, fmt.Errorf(
+					"Error at convert length iso format to minutes: %v",
+					errConvertMinutes,
+				)
+			}
 
-	if errGetVideo != nil {
-		return videoList, fmt.Errorf("Error get content details in video: %v", errGetVideo)
-	}
+			videoInfo := videoList[item.Snippet.ResourceId.VideoId]
 
-	for _, video := range videoResp.Items {
-		fmt.Printf("video struct in each call: %v\n", video)
-		toMinutes, errConvertMinutes := iso8601ToMinutes(video.ContentDetails.Duration)
+			videoInfo.LengthMins = toMinutes
 
-		if errConvertMinutes != nil {
-			return nil, fmt.Errorf(
-				"Error at convert length iso format to minutes: %v",
-				errConvertMinutes,
+			fmt.Printf(
+				"Found video title: %v, duration: %d minutes\n",
+				videoInfo.Title,
+				videoInfo.LengthMins,
 			)
 		}
-
-		videoList[video.Id] = VideoInfo{video.Snippet.Title, toMinutes}
-		fmt.Printf(
-			"Found video id: %v, title: %v, duration: %d minutes\n",
-			video.Id,
-			video.Snippet.Title,
-			toMinutes,
-		)
 	}
 
 	return videoList, nil
