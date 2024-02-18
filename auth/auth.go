@@ -52,7 +52,7 @@ func getTokenFromWeb(config *oauth2.Config) *oauth2.Token {
 		log.Fatalf("Unable to read auth code: %v", errReadAuthCode)
 	}
 
-	tok, errGetToken := config.Exchange(context.TODO(), authCode)
+	tok, errGetToken := config.Exchange(context.Background(), authCode)
 
 	if errGetToken != nil {
 		log.Fatalf("Cannot get token: %v", errGetToken)
