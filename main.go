@@ -18,12 +18,12 @@ func main() {
 
 	if len(mapVids) > 0 {
 		for key, value := range mapVids {
-			fmt.Printf("Title: %v, video Id: %v\n", value, key)
+			fmt.Printf("Title: %v, video info: %v\n", value, key)
 		}
 	}
 }
 
-func getVideos() (map[string]string, error) {
+func getVideos() (map[string]vids.Video, error) {
 	establishClient, errClient := auth.GetYoutubeService()
 
 	if errClient != nil {
