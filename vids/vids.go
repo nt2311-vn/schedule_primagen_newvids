@@ -104,7 +104,7 @@ func iso8601ToMinutes(duration string) (int, error) {
 	return totalMininutes, nil
 }
 
-func GetRecentVideos(client *youtube.Service, playlistId string) (map[string]VideoInfo, error) {
+func GetRecentVideos(client *youtube.Service, playlistId string) (map[string]*VideoInfo, error) {
 	callPlaylists := client.PlaylistItems.List([]string{"snippet"}).
 		PlaylistId(playlistId).
 		MaxResults(15)
@@ -116,7 +116,7 @@ func GetRecentVideos(client *youtube.Service, playlistId string) (map[string]Vid
 
 	now := time.Now()
 	oneDayAgo := now.AddDate(0, 0, -1)
-	videoList := make(map[string]VideoInfo)
+	videoList := make(map[string]*VideoInfo)
 
 	for _, item := range resp.Items {
 		publishedAt, err := time.Parse(time.RFC3339, item.Snippet.PublishedAt)
@@ -126,7 +126,7 @@ func GetRecentVideos(client *youtube.Service, playlistId string) (map[string]Vid
 		}
 
 		if publishedAt.After(oneDayAgo) {
-			videoList[item.Snippet.ResourceId.VideoId] = VideoInfo{item.Snippet.Title, 0}
+			videoList[item.Snippet.ResourceId.VideoId] = &VideoInfo{item.Snippet.Title, 0}
 		}
 
 		vidResp, errGetVideo := client.Videos.List([]string{"contentDetails"}).
@@ -134,7 +134,7 @@ func GetRecentVideos(client *youtube.Service, playlistId string) (map[string]Vid
 			Do()
 
 		if errGetVideo != nil {
-			return videoList, fmt.Errorf("Error get content details in video: %v", errGetVideo)
+			return nil, fmt.Errorf("Error get content details in video: %v", errGetVideo)
 		}
 
 		for _, video := range vidResp.Items {
@@ -149,7 +149,13 @@ func GetRecentVideos(client *youtube.Service, playlistId string) (map[string]Vid
 
 			videoInfo := videoList[item.Snippet.ResourceId.VideoId]
 
-			videoInfo.LengthMins = toMinutes
+			if videoInfo.Title == "" {
+				continue
+			}
+
+			if videoInfo != nil {
+				videoInfo.LengthMins = toMinutes
+			}
 
 			fmt.Printf(
 				"Found video title: %v, duration: %d minutes\n",
