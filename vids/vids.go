@@ -28,7 +28,6 @@ func GetPrimagenId(client *youtube.Service) (string, error) {
 
 		for _, item := range resp.Items {
 			if _, channelExist := primagenTitles[item.Snippet.Title]; channelExist {
-				fmt.Printf("Found the Primagen channel id: %s\n", item.Snippet.ResourceId.ChannelId)
 				return item.Snippet.ResourceId.ChannelId, nil
 			}
 		}
@@ -79,7 +78,6 @@ func GetRecentVideos(client *youtube.Service, playlistId string) (map[string]str
 		}
 
 		if publishedAt.After(oneDayAgo) {
-			fmt.Printf("%s - %s\n", item.Snippet.Title, item.Snippet.PublishedAt)
 			videoList[item.Snippet.ResourceId.VideoId] = item.Snippet.Title
 		}
 

@@ -9,29 +9,43 @@ import (
 )
 
 func main() {
+	mapVids, err := getVideos()
+	if err != nil {
+		log.Fatalf("Error on get videos from the channel: %v", err)
+	}
+
+	fmt.Printf("Found %d recent video(s)\n", len(mapVids))
+
+	if len(mapVids) > 0 {
+		for key, value := range mapVids {
+			fmt.Printf("Title: %v, video Id: %v\n", value, key)
+		}
+	}
+}
+
+func getVideos() (map[string]string, error) {
 	establishClient, errClient := auth.GetYoutubeService()
 
 	if errClient != nil {
-		log.Fatalf("Cannot connect to youtube service: %v", errClient)
+		return nil, errClient
 	}
 
 	channelId, errGetId := vids.GetPrimagenId(establishClient)
 
 	if errGetId != nil {
-		log.Fatalf("Cannot get id from the primagen channel: %v", errGetId)
+		return nil, errGetId
 	}
 
 	playlistId, errGetPlaylist := vids.GetUploadPlaylistId(establishClient, channelId)
 
 	if errGetPlaylist != nil {
-		log.Fatalf("Cannot trace playlist id on channel: %v, error:%v", channelId, errGetPlaylist)
+		return nil, errGetPlaylist
 	}
 
 	recentPlaylists, errGetVideos := vids.GetRecentVideos(establishClient, playlistId)
 
 	if errGetVideos != nil {
-		log.Fatalf("Error on get recent videos: %v", recentPlaylists)
+		return nil, errGetVideos
 	}
-
-	fmt.Printf("The recent video list: %v", recentPlaylists)
+	return recentPlaylists, nil
 }
