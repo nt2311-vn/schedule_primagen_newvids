@@ -9,7 +9,7 @@ import (
 	"google.golang.org/api/youtube/v3"
 )
 
-func getPrimagenId(client *youtube.Service) (string, error) {
+func GetPrimagenId(client *youtube.Service) (string, error) {
 	maxChannels := int64(15)
 	call := client.Subscriptions.List([]string{"snippet"}).Mine(true).MaxResults(maxChannels)
 
@@ -42,7 +42,7 @@ func getPrimagenId(client *youtube.Service) (string, error) {
 	return "", errors.New("Cannot find the channel Id in your channel title provide")
 }
 
-func getUploadPlaylistId(client *youtube.Service, channelId string) (string, error) {
+func GetUploadPlaylistId(client *youtube.Service, channelId string) (string, error) {
 	callPlaylist := client.Channels.List([]string{"contentDetails"}).Id(channelId)
 
 	resp, err := callPlaylist.Do()
@@ -57,7 +57,7 @@ func getUploadPlaylistId(client *youtube.Service, channelId string) (string, err
 	return resp.Items[0].ContentDetails.RelatedPlaylists.Uploads, nil
 }
 
-func getRecentVideos(client *youtube.Service, playlistId string) (map[string]string, error) {
+func GetRecentVideos(client *youtube.Service, playlistId string) (map[string]string, error) {
 	callVideos := client.PlaylistItems.List([]string{"snippet"}).
 		PlaylistId(playlistId).
 		MaxResults(15)
