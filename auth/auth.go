@@ -62,7 +62,7 @@ func getTokenFromWeb(config *oauth2.Config) *oauth2.Token {
 }
 
 func getClient(config *oauth2.Config) *http.Client {
-	tokFile := "../token.json"
+	tokFile := "token.json"
 
 	tok, err := tokenFromFile(tokFile)
 	if err != nil {
@@ -76,7 +76,7 @@ func getClient(config *oauth2.Config) *http.Client {
 func GetAuth() (*youtube.Service, error) {
 	ctx := context.Background()
 
-	jsonCred, errReadCredentials := os.ReadFile("../credentials.json")
+	jsonCred, errReadCredentials := os.ReadFile("credentials.json")
 
 	if errReadCredentials != nil {
 		return nil, errReadCredentials
