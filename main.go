@@ -17,8 +17,8 @@ func main() {
 	fmt.Printf("Found %d recent video(s)\n", len(mapVids))
 
 	if len(mapVids) > 0 {
-		for key, value := range mapVids {
-			fmt.Printf("Title: %v, video info: %v\n", *value, key)
+		for _, value := range mapVids {
+			fmt.Printf("Title: %v, video info: %d\n", value.Title, value.LengthMins)
 		}
 	}
 }

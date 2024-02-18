@@ -119,6 +119,10 @@ func GetRecentVideos(client *youtube.Service, playlistId string) (map[string]*Vi
 	videoList := make(map[string]*VideoInfo)
 
 	for _, item := range resp.Items {
+		if item.Snippet == nil || item.Snippet.ResourceId == nil {
+			log.Println("Skipping item due to nil snipper or resource id")
+			continue
+		}
 		publishedAt, err := time.Parse(time.RFC3339, item.Snippet.PublishedAt)
 		if err != nil {
 			log.Printf("Error parsing time: %v\n", err)
@@ -126,6 +130,10 @@ func GetRecentVideos(client *youtube.Service, playlistId string) (map[string]*Vi
 		}
 
 		if publishedAt.After(oneDayAgo) {
+			if item.Snippet.ResourceId.VideoId == "" {
+				fmt.Println("Skipping due to no video Id")
+				continue
+			}
 			videoList[item.Snippet.ResourceId.VideoId] = &VideoInfo{item.Snippet.Title, 0}
 		}
 
@@ -150,6 +158,7 @@ func GetRecentVideos(client *youtube.Service, playlistId string) (map[string]*Vi
 			videoInfo := videoList[item.Snippet.ResourceId.VideoId]
 
 			if videoInfo.Title == "" {
+				log.Println("Skip video with no title")
 				continue
 			}
 
@@ -164,6 +173,9 @@ func GetRecentVideos(client *youtube.Service, playlistId string) (map[string]*Vi
 			)
 		}
 	}
+	fmt.Println("Exit loop")
+
+	fmt.Printf("Video list info before export: %v\n", &videoList)
 
 	return videoList, nil
 }
