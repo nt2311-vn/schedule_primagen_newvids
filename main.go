@@ -14,14 +14,30 @@ func main() {
 		log.Fatalf("Error at getting service from api youtube: %v", errGetService)
 	}
 
-	call := clientService.Subscriptions.List([]string{"snippet"}).Mine(true)
+	maxChannels := int64(15)
 
-	resp, err := call.Do()
-	if err != nil {
-		log.Fatalf("Error fetching Subscriptions: %v", err)
-	}
+	call := clientService.Subscriptions.List([]string{"snippet"}).Mine(true).MaxResults(maxChannels)
+	nextPageToken := ""
 
-	for _, item := range resp.Items {
-		fmt.Printf("%s : %s\n", item.Snippet.ResourceId.ChannelId, item.Snippet.Title)
+	for {
+		if nextPageToken != "" {
+			call.PageToken(nextPageToken)
+		}
+
+		resp, err := call.Do()
+		if err != nil {
+			log.Fatalf("Error fetching Subscriptions: %v", err)
+		}
+
+		for _, item := range resp.Items {
+			fmt.Printf("%s : %s\n", item.Snippet.ResourceId.ChannelId, item.Snippet.Title)
+		}
+
+		nextPageToken = resp.NextPageToken
+
+		if nextPageToken == "" {
+			break
+		}
+
 	}
 }
